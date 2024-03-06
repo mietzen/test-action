@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.actor == 'dependabot[bot]'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
       - uses: actions/create-github-app-token@v1
         id: generate-token
         with:
@@ -25,12 +25,7 @@ jobs:
         run: gh pr merge --squash --auto "${{ github.event.pull_request.number }}"
         env:
           GH_TOKEN: ${{ steps.generate-token.outputs.token }}
-      - uses: actions/create-github-app-token@v1
-        id: generate-approval-token
-        with:
-          app-id: ${{ secrets.APP_ID_APPROVE }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY_APPROVE }}
       - name: Auto approve
         run: gh pr review --approve "${{ github.event.pull_request.number }}"
         env:
-          GH_TOKEN: ${{ steps.generate-approval-token.outputs.token }}
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
