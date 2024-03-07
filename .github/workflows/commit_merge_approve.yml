@@ -23,7 +23,7 @@ jobs:
             echo "change=no" >> $GITHUB_OUTPUT
           fi
       - uses: actions/create-github-app-token@v1
-        id: generate-token
+        id: merge-token
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -32,7 +32,7 @@ jobs:
         id: pr
         uses: peter-evans/create-pull-request@v5
         with:
-          token: ${{ steps.generate-token.outputs.token }}
+          token: ${{ steps.merge-token.outputs.token }}
           delete-branch: true
           title: "[Merger Bot] Updated"
           commit-message: Updated
@@ -48,16 +48,21 @@ jobs:
         if: steps.pr.outputs.pull-request-operation == 'created'
         uses: peter-evans/enable-pull-request-automerge@v2
         with:
-          token: ${{ steps.generate-token.outputs.token }}
+          token: ${{ steps.merge-token.outputs.token }}
           pull-request-number: ${{ steps.pr.outputs.pull-request-number }}
           merge-method: squash
       - name: Enable Pull Request Automerge
         if: steps.pr.outputs.pull-request-operation == 'created'
         run: gh pr merge --squash --auto "${{ steps.pr.outputs.pull-request-number }}"
         env:
-          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+          GH_TOKEN: ${{ steps.merge-token.outputs.token }}
+      - uses: actions/create-github-app-token@v1
+        id: approve-token
+        with:
+          app-id: ${{ secrets.APP_ID_APPROVE }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY_APPROVE }}
       - name: Auto approve
         if: steps.pr.outputs.pull-request-operation == 'created'
         run: gh pr review --approve "${{ steps.pr.outputs.pull-request-number }}"
         env:
-          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+          GH_TOKEN: ${{ steps.approve-token.outputs.token }}
