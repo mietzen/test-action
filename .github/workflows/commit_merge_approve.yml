@@ -23,6 +23,7 @@ jobs:
             echo "change=no" >> $GITHUB_OUTPUT
           fi
       - uses: actions/create-github-app-token@v1
+        if: steps.commit.outputs.change == 'yes'
         id: merge-token
         with:
           app-id: ${{ secrets.APP_ID }}
@@ -57,6 +58,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.merge-token.outputs.token }}
       - uses: actions/create-github-app-token@v1
+        if: steps.pr.outputs.pull-request-operation == 'created'
         id: approve-token
         with:
           app-id: ${{ secrets.APP_ID_APPROVE }}
