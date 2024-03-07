@@ -1,0 +1,63 @@
+name: Commit, Merge and Approve
+
+on:
+  workflow_dispatch:
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: date > date.txt
+      - name: Commit changes
+        id: commit
+        run: |
+          if ! [ -z "$(git status --porcelain)" ]; then
+            git config --local user.email "131801252+merger-bot[bot]@users.noreply.github.com"
+            git config --local user.name "merger-bot[bot]"
+            git add .
+            git commit -m "Updated date.txt"
+            echo "change=yes" >> $GITHUB_OUTPUT
+          else
+            echo "Nothing to commit!"
+            echo "change=no" >> $GITHUB_OUTPUT
+          fi
+      - uses: actions/create-github-app-token@v1
+        id: generate-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      - name: Create Pull Request
+        if: steps.commit.outputs.change == 'yes'
+        id: pr
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+          delete-branch: true
+          title: "[Merger Bot] Updated"
+          commit-message: Updated
+          committer: merger-bot[bot] <131801252+merger-bot[bot]@users.noreply.github.com>
+          author: merger-bot[bot] <131801252+merger-bot[bot]@users.noreply.github.com>
+          branch: auto-update
+          labels: |
+            automated pr
+            update
+          body: |
+            Updated
+      - name: Automerge if possible
+        if: steps.pr.outputs.pull-request-operation == 'created'
+        uses: peter-evans/enable-pull-request-automerge@v2
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+          pull-request-number: ${{ steps.pr.outputs.pull-request-number }}
+          merge-method: squash
+      - name: Enable Pull Request Automerge
+        if: steps.pr.outputs.pull-request-operation == 'created'
+        run: gh pr merge --squash --auto "${{ steps.pr.outputs.pull-request-number }}"
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+      - name: Auto approve
+        if: steps.pr.outputs.pull-request-operation == 'created'
+        run: gh pr review --approve "${{ steps.pr.outputs.pull-request-number }}"
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
