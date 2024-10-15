@@ -1,0 +1,19 @@
+name: test-gh
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-gh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/create-github-app-token@v1
+        id: merge-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      - name: Test GH
+        run: gh release view 4.4.1 --repo Homebrew/brew --json body --jq '.body'
+        env:
+          GH_TOKEN: ${{ steps.merge-token.outputs.token }}
