@@ -22,7 +22,7 @@ jobs:
             echo "Nothing to commit!"
             echo "change=no" >> $GITHUB_OUTPUT
           fi
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@v2
         if: steps.commit.outputs.change == 'yes'
         id: merge-token
         with:
@@ -57,7 +57,7 @@ jobs:
         run: gh pr merge --squash --auto "${{ steps.pr.outputs.pull-request-number }}"
         env:
           GH_TOKEN: ${{ steps.merge-token.outputs.token }}
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@v2
         if: steps.pr.outputs.pull-request-operation == 'created'
         id: approve-token
         with:
